@@ -1,0 +1,68 @@
+Description: >-
+  In this cloudformation temlate: I created One vpc in the same region and
+  vpc have one public subnet and one private subnet. In private subnets I
+  launched one ec2 instance.
+Parameters:
+  KeyName:
+    Description: Name of an existing EC2 KeyPair to enable SSH access to the instance
+    Type: 'AWS::EC2::KeyPair::KeyName'
+    ConstraintDescription: must be the name of an existing EC2 KeyPair.
+  InstanceType:
+    Description: EC2 instance
+    Type: String
+    Default: t2.micro
+    AllowedValues:
+      - t2.micro   
+    ConstraintDescription: must be a valid EC2 instance type.
+  SSHLocationforInstancesinMyVPC:
+    Description: The IP address range that can be used to SSH to the EC2 instances
+    Type: String
+    MinLength: 9
+    MaxLength: 18
+    Default: 0.0.0.0/0
+  LatestAmiId:
+    Type: 'AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>'
+    Default: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2
+Resources:
+  MyVPC:
+    Type: 'AWS::EC2::VPC'
+    Properties:
+      CidrBlock: 192.168.0.0/16
+  publicsubnetinMyVPC:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      VpcId: !Ref MyVPC
+      CidrBlock: 192.168.0.0/24
+  privatesubnetinMyVPC:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      VpcId: !Ref MyVPC
+      CidrBlock: 192.168.1.0/24
+  SGVPC1:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      VpcId: !Ref MyVPC
+      GroupDescription: Enable SSH access via port 22
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 192.168.1.0/24
+  MYINSTANCEINVPC1:
+    Type: 'AWS::EC2::Instance'
+    Properties:
+      InstanceType: !Ref InstanceType
+      SubnetId: !Ref privatesubnetinMyVPC
+      KeyName: !Ref KeyName
+      ImageId: !Ref LatestAmiId
+      SecurityGroupIds:
+        - !Ref SGVPC1
+  MYINSTANCEINVPC2:
+    Type: 'AWS::EC2::Instance'
+    Properties:
+      InstanceType: !Ref InstanceType
+      SubnetId: !Ref publicsubnetinMyVPC
+      KeyName: !Ref KeyName
+      ImageId: !Ref LatestAmiId
+      SecurityGroupIds:
+        - !Ref SGVPC1

@@ -1,0 +1,26 @@
+---
+- name: frontend play
+  hosts: frontend
+  remote_user: root
+  become: yes
+  gather_facts: yes
+  tasks:
+    - name: install package for the fundoo chat app
+      action: apt name=nginx state=present
+    - name: copy nginx configuration file for fundoo
+      copy:
+       src: /root/fundoo.cfg
+       dest: /etc/nginx/sites-available/fundoo.cfg
+    - name: restart service of nginx
+      service:
+       name: nginx
+       state: started
+    - name: for enabling the nginx
+      file:
+        src: /etc/nginx/sites-available/fundoo.cfg
+        dest: /etc/nginx/sites-enabled/default
+        state: link
+    - name: restart nginx
+      service:
+        name: nginx
+        state: restarted

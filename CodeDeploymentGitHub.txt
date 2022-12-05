@@ -1,0 +1,94 @@
+For Code Deploy
+
+1. create IAM 1st role 
+   select AWSCodeDeployRole
+   select ScalingFullAccess
+
+2. create IAM 2st role 
+   AutoScalingFullAccess
+   AmazonEC2RoleforAWSCodeDeploy
+   AmazonS3FullAccess
+
+3. create new instance or select existing instance
+   add or edit IAM role (ec2AmazonEC2RoleforAWSCodeDeploy)
+   add or edit code deployment agent given below
+   apt-get update
+   apt-get install -y ruby
+   apt-get install wget
+   cd /home/ubuntu
+   wget https://aws-codedeploy-us-east-1.s3.us-east-1.amazonaws.com/latest/install
+   chmod +x ./install
+   sudo ./install auto
+
+   check inside the putty installation part successfull or not by using following command
+   systemctl status codedeployment-agent.service
+   (if not install then install manually, and again check using above command)
+
+4. click on Service and select Code Deploy
+
+5. create Application
+   select ec2/on-premises
+
+6. create Code Deployment Group
+    give deployment group name
+    select service role
+    select Amazon EC2 instance
+    uncheck load balancer
+    click on create deployment group
+
+7. Create pipeLine
+    give pipeline name
+    click on next
+    choose Source GitHub (version 1)
+    attach with github account
+    add repository name 
+    add github token...
+   
+   
+8. click on create Deployment
+
+9. Modify code in github 
+
+10. and click on retry deployment
+
+         or
+
+        click on create deployment 
+        fill all required information like, github repository name, commit ID
+        and check. 
+
+
+----------------------------------------------------------------------------------------
+
+
+
+
+For Deployment Using Autoscaling
+
+1. take snapshot 
+
+2. create new AMI image (don,t use existing AMI image)
+
+3. create load balancer or choose existing load balancer
+
+4. create launch configuration 
+
+5. create autoscaling group
+
+6. create new application
+
+7. create deployment group 
+    give deployment group name
+    select service role
+    select Amazon EC2 Autocaling
+    click on create deployment group
+
+8. Create pipeLine
+    give pipeline name
+    click on next
+    choose Source GitHub (version 1)
+    attach with github account
+    add repository name 
+    add github token...
+
+9.click on create Deployment

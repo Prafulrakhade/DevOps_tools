@@ -1,0 +1,186 @@
+eksctl create cluster \
+ --name eks-kubernetes-cluster \
+ --region us-east-1 \
+ --version 1.23 \
+ --managed \
+ --nodegroup-name worker-group \
+ --node-type t2.medium \
+ --nodes-min 1 \
+ --nodes-max 4 \
+ --node-volume-size 20 \
+ --ssh-access \
+ --ssh-public-key keypair \
+ --asg-access \
+ --external-dns-access \
+ --full-ecr-access \
+ --kubeconfig /home/ubuntu/.kube/config
+
+------------------------------------------------------------------
+
+#create deplpyment and service set for database
+  sudo nano database.yml
+*******************************database.yml***********************************************
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql
+  labels:
+    app: mysql
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mysql
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      containers:
+      - name: mysql
+        image: praful02/chat_app_db:latest
+        resources:
+              limits:
+                cpu: 500m
+              requests:
+                cpu: 200m
+
+
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: database     
+spec:
+  selector:
+    app: mysql
+  type: ClusterIP
+  ports:
+    - name: mysql
+      port: 3306
+      targetPort: 3306
+------------------------------------------------------------------------------
+
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  labels:
+    app: backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backend
+  strategy:
+    type: Recreate
+
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+        - name: backend
+          image: praful02/chat_app_backend:backend_server
+          imagePullPolicy: Always
+          ports:
+            - name: tcp
+              containerPort: 8000
+          resources:
+              limits:
+                cpu: 500m
+              requests:
+                cpu: 200m
+
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: backend
+spec:
+  selector:
+    app: backend
+  type: ClusterIP
+  ports:
+    - name: backend
+      port: 8000
+      targetPort: 8000
+
+------------------------------------------------------------------------------
+
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  labels:
+    app: frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend
+  strategy:
+    type: Recreate
+
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+      - name: frontend
+        image: praful02/chat_app_frontend:frontend_server
+        imagePullPolicy: Always
+        volumeMounts:
+          - name: chatapp
+            mountPath: /etc/nginx/conf.d/
+            readOnly: true
+        ports:
+        - containerPort: 80
+        resources:
+          limits:
+            cpu: 500m
+          requests:
+            cpu: 200m
+      volumes:
+      - name: chatapp
+        configMap:
+          name: configmap
+
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: frontend
+spec:
+  selector:
+    app: frontend
+  type: ClusterIP
+  ports:
+    - name: frontend
+      port: 80
+      targetPort: 80
+
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: configmap
+data:
+  nginxconf.conf: |
+      server {
+      listen 80 ;
+      server_name _default;
+      root /new_chatapp/fundoo;
+      location / {
+      proxy_pass http://backend:8000;
+      }
+      }
+
+------------------------------------------------------------------------------
+
+AKIA5KEBYAIW2EKU54WA
+nib5kxHjSsoDbsQ8PGaxxgxXbiY9uDA7m/yBUIad

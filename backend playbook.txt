@@ -1,0 +1,98 @@
+---
+- hosts: backend
+  become: yes
+  tasks:
+         - name: installing the package for chatapp
+           apt: name=python3 state=present
+           apt: name=python3-pip state=present
+           apt: name=python3-dev state=present
+
+
+         - name: installing pip
+           apt:
+                 name: python3-pip
+                 state: present
+
+         - name: installing the virtual env
+           become: true
+           command: pip3 install virtualenv
+
+         - name: clone the github repo
+           git:
+                   repo: https://github.com/biradarajay1904/new_chatapp
+                   dest: new_chatapp
+                   clone: yes
+           register: repo_clone
+           failed_when:
+                       - repo_clone.failed
+                       - not 'Local modifications exist in repository' in repo_clone.msg
+
+
+         - name: creating the virtual environment venv
+           command:
+                   cmd: virtualenv -p /usr/bin/python3 venv
+                   creates: "/root/new_chatapp1/venv"
+
+         - name: Installing the python requriments
+           pip:
+                  requirements: /root/new_chatapp/requirements.txt
+                  virtualenv: /root/new_chatapp/venv
+                  state: present
+         - name: Installing package for database mysql
+           apt: name=default-libmysqlclient-dev state=present
+         - name: Install the package of database
+           apt: name=libssl-dev state=present
+
+         - name: Installing mysqlclient
+           pip:
+                  name: mysqlclient
+                  virtualenv: /root/new_chatapp/venv
+
+         - name: Installing psycopg2-binary
+           pip:
+                  name: psycopg2-binary
+                  virtualenv: /root/new_chatapp/venv
+
+         - name: changing file ownership
+           file:
+                   path: /root/new_chatapp/fundoo/manage.py
+                   mode: '777'
+
+         - name: run cachetable on the application
+           django_manage:
+                   command: createcachetable
+                   app_path: /root/new_chatapp/fundoo
+                   pythonpath: /root/new_chatapp/fundoo/fundoo
+                   virtualenv: /root/new_chatapp/venv
+         - name: Running the migrate-command
+           django_manage:
+            command: migrate
+            app_path: /root/new_chatapp/fundoo
+            pythonpath: /root/new_chatapp/fundoo/fundoo
+            virtualenv: /root/new_chatapp/venv
+
+         - name: copying the gunicorn configuration
+
+           copy:
+                   src: /root/gunicorn.service
+                   dest: /etc/systemd/system/gunicorn.service
+
+         - name: restart gunicorn service
+           systemd:
+
+            command: migrate
+            app_path: /root/new_chatapp/fundoo
+            pythonpath: /root/new_chatapp/fundoo/fundoo
+            virtualenv: /root/new_chatapp/venv
+
+           systemd:
+                   name: gunicorn
+                   daemon_reload: yes
+                   state: started
+                   enabled: yes
+
+         - name: restarting the gunicorn service
+           systemd:
+                   name: gunicorn
+                   state: restarted
+

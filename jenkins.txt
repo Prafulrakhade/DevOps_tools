@@ -1,0 +1,66 @@
+pipeline{
+    agent any
+    stages{
+        stage("git"){
+            steps{
+                git 'https://github.com/Prafulrakhade/new_chatapp_project.git'
+            }
+        }
+stage('build') {
+            steps {
+               sh 'rsync -avz -e "ssh -o StrictHostKeyChecking=no -i /home/ubuntu/keypair.pem" /var/lib/jenkins/workspace/ChatApplication ubuntu@10.0.3.172:/home/ubuntu/new_chatapp_project'
+            }
+        }
+stage('deploy') {
+            steps {
+               sh 'ssh -i /home/ubuntu/keypair.pem ubuntu@10.0.3.172 "bash /home/ubuntu/new_chatapp_project/scripts/start_server.sh"'
+               }
+            }
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pipeline{
+    agent any
+    stages{
+        stage("git"){
+            steps{
+                git 'https://github.com/Prafulrakhade/new_chatapp_project.git'
+            }
+        }
+stage('build') {
+            steps {
+               sh 'rsync -avz -e "ssh -o StrictHostKeyChecking=no -i /home/ubuntu/keypair.pem" /var/lib/jenkins/workspace/ChatApp ubuntu@10.0.3.172:/root/new_chatapp_project'
+            }
+        }
+stage('deploy') {
+            steps {
+               sh 'ssh -i /home/ubuntu/keypair.pem ubuntu@10.0.3.172 "bash /root/new_chatapp_project/scripts/start_server.sh"'
+               }
+            }
+    }
+}

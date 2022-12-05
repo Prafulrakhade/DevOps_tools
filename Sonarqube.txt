@@ -1,0 +1,213 @@
+create new sonarqube server using AWS EC2 Instance with t2.medium and sequrity is TCP 9000
+
+
+1.  sudo apt-get update && sudo apt-get install default-jdk -y
+2.  java -version
+3.  sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt/ `lsb_release -cs`-pgdg main" >> /etc/apt/sources.list.d/pgdg.list'
+4.  sudo wget -q https://www.postgresql.org/media/keys/ACCC4CF8.asc -O - | sudo apt-key add -
+5.  sudo apt-get -y install postgresql postgresql-contrib
+6.  sudo systemctl start postgresql
+7.  sudo systemctl enable postgresql
+
+    Login as postgres user
+8.  sudo su - postgres
+
+    Now create a user below by executing below command
+9.  createuser sonar   <-------sonar is a username
+
+    Switch to sql shell by entering
+10. psql
+  
+    Execute the below three lines (one by one)
+11. ALTER USER sonar WITH ENCRYPTED password 'Rakhade02';  <---  'sonar' is a username and 'Rakhade02' is a password
+12. CREATE DATABASE sonarqube OWNER sonar;
+13. GRANT ALL PRIVILEGES ON DATABASE sonarqube to sonar;
+   
+    Now to come out of Postgres by below command and press enter
+14. \q
+
+    and then type exit to come out of postgres user.
+15. exit
+
+    Download SonarQube and Install
+
+16. sudo wget https://binaries.sonarsource.com/Distribution/sonarqube/sonarqube-8.6.0.39681.zip
+17. sudo apt-get -y install unzip
+    ls -al
+18. sudo unzip sonarqube*.zip -d /opt
+    ls -al
+    cd /opt
+
+19. sudo mv /opt/sonarqube-8.6.0.39681 /opt/sonarqube -v  <---- for renaming
+    ls -l
+
+    Create Group and User:
+20. sudo groupadd sonarGroup
+  
+    Now add the user with directory access
+21. sudo useradd -c "user to run SonarQube" -d /opt/sonarqube -g sonarGroup sonar 
+22. sudo chown sonar:sonarGroup /opt/sonarqube -R
+    ls -al
+23. cd sonarqube/
+    ls
+24. cd conf/
+    ls -al
+    Modify sonar.properties file
+25. sudo vi /opt/sonarqube/conf/sonar.properties
+    uncomment the below lines by removing # and add values highlighted yellow
+    press 'i'  in vi editor
+
+    sonar.jdbc.username=sonar
+    sonar.jdbc.password=Rakhade02
+    
+    #sonar.jdbc.url=jdbc:postgresql://localhost/sonarqube?currentSchema=my_schema    <------ below this line add below line in same vi editor
+    
+    sonar.jdbc.url=jdbc:postgresql://localhost/sonarqube
+
+    Now press escape button, and enter :wq! to come out of the above screen.
+    press 'esc' button
+    :wq
+
+    Edit the sonar script file and set RUN_AS_USER
+
+26. sudo vi /opt/sonarqube/bin/linux-x86-64/sonar.sh
+    Add enable the below line i.e uncomment the below line
+    RUN_AS_USER=sonar
+
+    Now press escape button, and enter :wq! to come out of the above screen.
+    press 'esc' button
+    :wq
+
+    Setup SonarQube as a service(this will enable to start automatically when you restart the server)
+
+    Execute the below command:
+27. sudo vi /etc/systemd/system/sonar.service
+
+    add the below code in green color:
+[Unit]
+Description=SonarQube service
+After=syslog.target network.target
+
+[Service]
+Type=forking
+
+ExecStart=/opt/sonarqube/bin/linux-x86-64/sonar.sh start
+ExecStop=/opt/sonarqube/bin/linux-x86-64/sonar.sh stop
+LimitNOFILE=131072
+LimitNPROC=8192
+User=sonar
+Group=sonarGroup
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+
+    Save the file by entering :wq!
+
+
+    Kernel System changes
+    we must make a few modifications to a couple of kernel system limits files for sonarqube to work.
+28. sudo vi /etc/sysctl.conf
+
+    At the end of this file, add the following: 
+    vm.max_map_count=262144
+    fs.file-max=65536
+    ulimit -n 65536
+    ulimit -u 4096
+     
+    ecs 
+    :wq
+
+    Next, we're going to edit limits.conf. Open that file with the command:
+
+29. sudo vi /etc/security/limits.conf
+
+    At the end of this file, add the following: 
+
+    sonar   -   nofile   65536
+    sonar   -   nproc    4096
+
+    ecs 
+    :wq
+
+    Reload system level changes without server boot
+    Start SonarQube Now
+30. sudo systemctl start sonar
+
+31. sudo systemctl enable sonar
+
+32. sudo systemctl status sonar
+
+
+    Now execute the below command to see if Sonarqube is up and running. This may take a few minutes.
+33. tail -f /opt/sonarqube/logs/sonar*.log
+
+
+    stop the ec2 instance and again start ec2 instance and run below or above command again
+
+34. tail -f /opt/sonarqube/logs/sonar*.log
+
+
+its all about sonarqube installation and setup
+link for reference ---->>>  https://www.coachdevops.com/2021/01/install-sonarqube-8-on-ubuntu-how-to.html
+----------------------------------------------------------------------------------------------------------
+
+
+
+    Jenkins using Sonarqube :
+    
+1.   login to sonarqube server using public ip of sonarqube server ex. 44.203.27.126:9000
+2.   create project inside the sonar server 
+3.   write project key name and generate token
+4.   copy the generated token in notepad
+5.   Ex.  chat_app_sonar: b8093f9d2c18d81bc7ee68ccd22dcbfd1610e52a   <---token
+6.   go to manage Jenkins -- go to manage plugin click on availabe and search sonarqube scanner 
+7.   go to manage credential -- create a new credentials using secret text and paste the generated token from sonarqube project
+8.   go to manage jenkins --> configure system --> go to sonarqube add name along with the IP Server address of Sonarqube | Ex: http://localhost:9000
+9.   go to manage Jenkins -- Global tool configuration --- add sonarqube scanner with automatic installation sonarqube credential
+
+10. write a pipeline
+
+
+pipeline{
+    agent any
+    stages{
+        stage("git"){
+            steps{
+                git 'https://github.com/Prafulrakhade/new_chatapp_project.git'
+            }
+        }
+stage("SonarQube Analysis") {
+    steps {
+        script {
+            sh "/var/lib/jenkins/tools/hudson.plugins.sonar.SonarRunnerInstallation/sonarscanner/bin/sonar-scanner -Dsonar.projectKey=chat_app_sonar -Dsonar.sources=.   -Dsonar.host.url=http://ec2-3-239-47-67.compute-1.amazonaws.com:9000 -Dsonar.login=b8093f9d2c18d81bc7ee68ccd22dcbfd1610e52a"
+        }
+    }
+}
+stage('build') {
+            steps {
+               sh 'rsync -avz -e "ssh -o StrictHostKeyChecking=no -i /home/ubuntu/keypair.pem" /var/lib/jenkins/workspace/ChatApp ubuntu@10.0.136.193:/root/ '
+            }
+        }
+stage('deploy') {
+            steps {
+               sh 'ssh -i /home/ubuntu/keypair.pem ubuntu@10.0.136.193 "bash /root/ChatApp/scripts/start_server.sh"'
+               }
+            }
+    }
+}
+
+
+--------------------------------------------------------------------------------------------------------------------------------------------   
+
+tool name SonarQubeScanner
+
+
+https://docs.aws.amazon.com/eks/latest/userguide/getting-started-eksctl.html
+
+   sonar-scanner \
+  -Dsonar.projectKey=chat_app_sonar \
+  -Dsonar.sources=. \
+  -Dsonar.host.url=http://ec2-3-239-47-67.compute-1.amazonaws.com:9000 \
+  -Dsonar.login=b8093f9d2c18d81bc7ee68ccd22dcbfd1610e52a
+

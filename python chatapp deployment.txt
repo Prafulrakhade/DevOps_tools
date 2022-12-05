@@ -1,0 +1,166 @@
+check database connect or not uwsing below command 
+
+telnet <endpoint> 3306
+
+check database create or not using following command
+
+mysql -h <rds endpoint> -P 3306 -u <admin name> -p
+
+
+
+
+Python django deployment from GitHub to aws ec2 (Elastic Compute Cloud)
+
+cd Downloads/
+mv zillows.pem ~/Desktop/
+cd ..
+cd desktop
+
+chmod
+
+ssh
+
+yes
+
+sudo apt-get update
+sudo apt-get install python-pip python-dev nginx git
+
+Y
+
+sudo apt-get update
+sudo pip3 install virtualenv
+cd 
+git clone https://github.com/Prafulrakhade/new_chatapp_project.git
+cd new_chatapp_project
+virtualenv venv
+virtualenv -p /usr/bin/python3 venv
+source venv/bin/activate
+pip3 install -r requirements.txt
+pip3 install django bcrypt django-extensions
+pip3 install gunicorn
+cd fundoo/fundoo
+sudo apt-get install python3-dev default-libmysqlclient-dev build-essential
+pip install mysqlclient
+sudo vim settings.py
+
+
+# Inside settings.py modify these lines allowed host public IP address I for INSERT
+
+i
+
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'chatdb',
+        'USER': 'praful02',
+        'PASSWORD': 'Rakhade02',
+        'HOST': 'chatdb.c9tnyybdjsw4.us-east-1.rds.amazonaws.com',
+        'PORT': '3306',
+    }
+}
+
+
+Save your changes and quit. ESC :wq
+
+cd .. 
+python3 manage.py migrate 
+gunicorn --bind 0.0.0.0:8000 fundoo.wsgi:application
+
+ctrl+c
+
+sudo vim /etc/systemd/system/gunicorn.service
+
+i
+
+[Unit]
+  Description=gunicorn daemon
+  After=network.target
+  [Service]
+  User=root
+  Group=www-data
+  WorkingDirectory=/root/new_chatapp_project/fundoo
+  ExecStart=/bin/bash -c 'source /root/new_chatapp_project/venv/bin/activate && gunicorn --bind 0.0.0.0:8000 fundoo.wsgi:application'
+ [Install]
+ WantedBy=multi-user.target
+
+ESC :wq
+
+
+sudo systemctl daemon-reload
+sudo systemctl start gunicorn
+sudo systemctl enable gunicorn
+sudo systemctl status gunicorn
+curl localhost:8000
+
+exit and go in frontend part
+
+
+for Forntend server ---->
+
+sudo vim /etc/nginx/sites-available/fundoo
+
+i
+
+server {
+        listen 80;
+        server_name _default;
+        #location = /favicon.ico { access_log off; log_not_found off; }
+        location /static/ {
+                root /new_chatapp_project/fundoo;             -->path
+        }
+        location / {
+               include proxy_params;
+               proxy_pass http://10.0.133.200:8000;    -->backendIP
+        }
+}
+
+ESC :wq
+
+sudo ln -s /etc/nginx/sites-available/fundoo /etc/nginx/sites-enabled
+sudo nginx -t
+sudo rm /etc/nginx/sites-enabled/default
+sudo service nginx restart
+sudo systemctl status nginx
+curl licalhost:80
+
+
+
+
+
+
+if nginx active ---->
+1) forntend instance snapshot
+2) launch configuration above ami
+3) create auto scaling group
+4) target group port 80 
+5) load balancer (internet facing) --(networking load)
+
+
+
+-------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+[Unit]
+Description=gunicorn daemon
+After=network.target
+[Service]
+User=root
+Group=www-data
+WorkingDirectory=/root/new_chatapp
+ExecStart=/root/new_chatapp/venv/bin/gunicorn --workers 3 --bind unix:/root/new_chatapp/fundoo.sock fundoo.wsgi:application
+
+
+
+
+
+
+
+

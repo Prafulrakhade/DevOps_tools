@@ -1,0 +1,196 @@
+Installation of Nagios on Ubuntu
+
+
+Step 1: Install Required Packages
+
+On server side installation and configuration, You need to install all dependencies for nagios-core in your ubuntu 16.04 machine by the following commands,
+before installation of we need update the repository first as a root user.
+
+
+. sudo -i
+. apt-get update
+. apt-get install build-essential openssl unzip apache2 php perl make php-gd libgd-dev libapache2-mod-php libperl-dev libssl-dev daemon wget apache2-utils nagios-nrpe-plugin -y
+
+
+Step 2: Add Nagios User and Group
+
+
+You need to create user and group to allow to executite to commands from web user-interfaces, We create nagios user and nagcmd group also need to associate
+the nagios user with apache user to the part of the nagcmd group by the following commands.
+
+
+. useradd nagios && groupadd nagcmd
+. usermod -a -G nagcmd nagios && usermod -a -G nagcmd www-data
+
+
+Step 3: Download Nagios 4.4.3
+
+Now you need to download the nagios-core' tar files to compile by following the commands.
+
+
+. cd /tmp
+. wget https://assets.nagios.com/downloads/nagioscore/releases/nagios-4.4.3.tar.gz
+. tar -zxvf /tmp/nagios-4.4.3.tar.gz
+. cd /tmp/nagios-4.4.3/
+
+
+Step 4: Nagios Compile
+
+You need to compile the nagios core by using the following commands.
+
+
+.   ./configure --with-nagios-group=nagios --with-command-group=nagcmd --with-httpd_conf=/etc/apache2/sites-enabled/
+
+  make all
+  make install
+  make install-init
+  make install-config
+  make install-commandmode
+  make install-webconf
+
+
+Step 5: Nagios username and password
+
+After this You need to create basic authentication using htaccess of nagios web user-interfaces
+using the commands, put your password to access the nagios web interface.
+
+.  htpasswd -c /usr/local/nagios/etc/htpasswd.users nagiosadmin
+
+Step 6: Enable Apache2 modules
+
+After this you need to install apache modules cgi by following the commands and restart the apache2 services to get effect.
+
+
+.  a2enmod cgi && systemctl restart apache2
+
+
+Step 7 : Downloading and compile nagios plugin
+
+After that, You need to download and compile the nagios plugin for monitoring the service by following the commands.
+
+.  cd /tmp
+.  wget https://nagios-plugins.org/download/nagios-plugins-2.2.1.tar.gz
+.  tar -zxvf /tmp/nagios-plugins-2.2.1.tar.gz
+.  cd /tmp/nagios-plugins-2.2.1/
+.  ./configure --with-nagios-user=nagios --with-nagios-group=nagios
+.  make
+.  make install
+
+
+Step 8: Verifying nagios configuration cfg file
+
+Now you need to check the nagios configuration by following the commands.
+
+.  /usr/local/nagios/bin/nagios -v /usr/local/nagios/etc/nagios.cfg
+
+
+Step 9: On boot enable nagios service and start the nagios process 
+
+After this, You need to enable to nagios service to auto start on system boot time and You need to start the nagios services by using following commands.
+
+.  systemctl start nagios && systemctl enable nagios
+
+Now it's time to open the browser and open the nagios web url like :-
+
+.  http://localhost/nagios/  Ex. 44.192.99.93/nagios/  ----> public IP of Nagios main server
+
+And enter nagios ID and Password and check it
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+Now create new instance or goto another instance called Remote or client Server (NRPE)
+
+
+Step 1 - Install NRPE on Ubuntu
+
+NRPE is available on Ubuntu without the need for another repository.  You can install NRPE by issuing the following commands
+
+.  sudo apt-get update
+
+apt-get install build-essential openssl unzip apache2 php perl make php-gd libgd-dev libapache2-mod-php libperl-dev libssl-dev daemon wget apache2-utils nagios-nrpe-plugin -y
+
+.  sudo apt-get install nagios-nrpe-server nagios-plugins
+
+
+---Steps For Adding Redhat Linux as client for   Nagios 
+---Installing NRPE
+
+.  sudo apt-get install -y gcc glibc glibc-common openssl openssl-devel perl wget
+.  cd /tmp
+.  wget --no-check-certificate -O nrpe.tar.gz https://github.com/NagiosEnterprises/nrpe/archive/nrpe-3.2.1.tar.gz
+.  tar xzf nrpe.tar.gz
+
+.  cd /tmp/nrpe-nrpe-3.2.1/
+.  ./configure --enable-command-args
+.  make all
+.  make install-groups-users
+.  make install
+.  make install-config
+
+.  echo >> /etc/services
+.  echo '# Nagios services' >> /etc/services
+.  echo 'nrpe    5666/tcp' >> /etc/services
+
+.  make install-init
+.  systemctl enable nrpe.service
+
+.  vi /usr/local/nagios/etc/nrpe.cfg
+
+     allowed_hosts=127.0.0.1,::    <----- add private ip of nagios main server  
+.  systemctl start nrpe.service
+
+/usr/local/nagios/libexec/check_nrpe -H 127.0.0.1
+
+NRPE v3.2.1   ---->shows version
+
+
+--------------------------------------------------------------------------------------------
+
+Now Go to the Nagios main Server
+
+
+.  cd /usr/local/nagios/etc/
+.  ls
+.  vi nagios.cfg   <------ add the server or remote host in given below 
+
+# Definitions for monitoring the local (Linux) host
+   cfg_file=/usr/local/nagios/etc/objects/localhost.cfg   <------ copy this line and add below like given in below
+   cfg_file=/usr/local/nagios/etc/objects/client1.cfg     <------write any name in the instead of client1.cfg
+
+esc 
+:wq
+
+
+.  ls
+.  cd objects/
+
+.  cp localhost.cfg client1.cfg
+
+.  vi client1.cfg   <------ change like below
+       host_name               client1   <------ give host name as you want    
+       alias                   client1    <----- this is also same
+       address                 10.0.8.6  <----- add private ip of the client server or remote server
+
+and next remove the defination host group
+
+
+and then change host_name from the given services 
+
+esc
+:wq
+
+.  systemctl restart nagios
+
+
+and last check in nagios which is running in the broweser
+
+
+completed
+-----------------------------------------------------------------------------------------------------------------------------------
+
+   
+for reference
+
+https://www.techbeginner.in/2019/12/how-to-install-nagios-core-443-using.html?m=1   
+https://github.com/vinodkumaros/nagios

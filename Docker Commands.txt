@@ -1,0 +1,125 @@
+Docker Installation:
+•	$ sudo apt-get update -y
+•	$ sudo apt-get upgrade -y
+•	$  curl -fsSL https://get.docker.com -o get-docker.sh
+•	$  ls
+•	$  sudo sh get-docker.sh
+•	$  docker version
+•	$  sudo usermod -aG docker ubuntu    -------> sudo suremod -aG <username>
+•	$  sudo systemctl start docker
+•	$  sudo systemctl status docker
+•	$  sudo systemctl enable docker
+•	$  sudo systemctl status docker
+•	$  docker –version
+
+
+-------------------------------------------------------------------------------------------------------
+Docker useful commands for CLI
+
+
+systemctl status docker
+
+systemctl start docker
+
+systemctl stop docker
+
+
+1. docker version  ---> To check version of docker
+
+2. docker images   ---> To see all images present in local machine
+
+3. docker search <imagename> ---> To search image in docker hub    EX. docker search ubuntu
+
+4. docker pull <imagename> ---> To download image from docker hub to local machine EX. docker pull ubuntu
+
+5. docker push <imagename>:<tag> ---> upload an image to an repository  Ex.  docker push myimage:1.o
+
+5. docker run -it --name <containerName> <imageName> /bin/bash ---> to create container from image and run container and give suitable name for the container
+   EX.  docker run -it --name myContainer ubuntu /bin/bash
+
+6. docker stop <containerName> ---> to stop the container EX.  docker stop mycontainer
+
+7. docker start <containerName> ---> to start the container EX.  docker start mycontainer
+
+8. docker attach <containerName> ---> to enter the container EX. docker attach mycontainer
+
+9. docker run -p <HOSTPORT>:<CONTAINERPORT> <IMAGENAME> ----> To mapping a port to the container
+   Ex. docker run -p 80:80 ubuntu
+   Ex. docker run -it --name <containerName> -p 80:80 <imagename> ---> To mapping a port at the time of container creation
+   Ex. docker run -td --name <containerName> -p 80:80 <imagename> ---> To mapping a port at the time of container creation but not enter in the container
+
+10. docker run -P <imagename> ---> mapping all port to the image Ex.  docker run -P ubuntu
+
+11. docker run -d <imagename> ---> start container in background Ex.  docker run -d ubuntu
+
+12. docker ps ---> Show a list of running container in the local machine
+
+13. docker ps -a ---> Show a list of all container in the local machine
+
+14. docker rm -f <containerName> ---> to delete the container  Ex.  docker rm -f mycontainer
+
+15. docker exec -it <containerName> /bin/bash ---> start ashell inside a running container  Ex.  docker exec -it mycontainer /bin/bash
+
+16. docker rename <OLDCONTAINERNAME> <NEWCONTAINERNAME>  ----> rename the container  EX.  docker rename mycontainer newmycontainer
+
+17. docker commit <containerName> ---> create an image out of the container  Ex.  docker commit myimage
+
+18. docker rmi <imagename> --->  to delete the image from local machine  EX. docker rmi myimage
+
+19. docker build -t <imagename> .  ----> build and tag an image from a dockerfile  Ex.  docker build -t myimage .
+
+20. docker tag <imagename> <newimagename>  ---> tag an image name  Ex.   docker tag ubuntu ubuntu:18.04
+
+21. docker logs <containerName> ---> show the logs of a container  Ex. docker logs mycontainer
+
+22. docker stats  --->  show stats of running container
+
+23. docker top <containerName> ---> show process of container  Ex.  docker top mycontainer
+
+24. docker inspect <imagename> ---> get details info about an object  Ex. docker inspect ubuntu
+
+25. docker port <containerName> ---> show mapped ports of the container  Ex.  docker port mycontainer
+
+26. docker diff <containerName> ---> shows all modifications or changes in container  Ex.  docker diff mycontainer
+
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+Docker file Creation
+
+
+1. Create filename as 'Dockerfile'
+
+2. Add Instruction in Dockerfile
+
+3. Build Dockerfile to create an image
+
+4. Run image to create container
+
+------Commands for 'Dockerfile' Creation---------
+
+1. vi Dockerfile 
+   FROM ubuntu
+   WORKDIR /tmp
+   RUN echo " create image using Dockerfile" > /tmp/testfile
+   
+   esc
+   :wq
+
+2. docker build -t myimage .
+
+3. ps -a
+
+4. docker images
+
+5. docker run -it --name mycontainer myimage /bin/bash
+
+6. cat /tmp/testfile   <------  in this file you see the msg i.e. create image using Dockerfile
+ 
+-------------------------------------------------------------------------------------------------------------------------------------
+
+
+Docker Volume and How to Share it
+

@@ -1,0 +1,106 @@
+iam user-
+acessid - AKIA5KEBYAIW2EKU54WA
+secretkey id - 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
+
+vpc id :- vpc-0b4a0fef1c9facd9b
+subnet id : subnet-0704cc831965c19d0
+igw :- 
+
+You must specify a region. You can also configure your region by running "aws configure".
+
+command - aws configure 
+
+1) add aws Access key
+2) add secret access key 
+3) write region 
+4)output format:- json
+
+To create a VPC and subnets using the AWS CLI
+1) Create a VPC with a 10.0.0.0/16 CIDR block using the following create-vpc command.
+
+command- aws ec2 create-vpc --cidr-block 10.0.0.0/16 --query Vpc.VpcId --output text
+
+2) Using the VPC ID from the previous step, create a subnet with a 10.0.1.0/24 CIDR block using the following create-subnet command.
+
+command- aws ec2 create-subnet --vpc-id vpc-0b4a0fef1c9facd9b --cidr-block 10.0.1.0/24
+
+3) Create a second subnet in your VPC with a 10.0.0.0/24 CIDR block.
+
+command- aws ec2 create-subnet --vpc-id vpc-2f09a348 --cidr-block 10.0.0.0/24
+
+
+Step 2: Make your subnet public
+
+1)Create an internet gateway using the following create-internet-gateway command.
+
+command- aws ec2 create-internet-gateway --query InternetGateway.InternetGatewayId --output text
+
+2)Using the ID from the previous step, attach the internet gateway to your VPC using the following attach-internet-gateway command.
+
+command- aws ec2 attach-internet-gateway --vpc-id vpc-2f09a348 --internet-gateway-id igw-1ff7a07b
+
+3)The route table is currently not associated with any subnet. You need to associate it with a subnet in your VPC so that traffic from that subnet is routed to the internet gateway. Use the following describe-subnets command to get the subnet IDs. The --filter option restricts the subnets to your new VPC only, and the --query option returns only the subnet IDs and their CIDR blocks.
+
+command- aws ec2 describe-subnets --filters "Name=vpc-id,Values=vpc-2f09a348" --query "Subnets[*].{ID:SubnetId,CIDR:CidrBlock}"
+
+4)You can choose which subnet to associate with the custom route table, for example, subnet-b46032ec, and associate it using the associate-route-table command. This subnet is your public subnet.
+
+command -aws ec2 associate-route-table  --subnet-id subnet-b46032ec --route-table-id rtb-c1c8faa6
+
+Step 3: Launch an instance into your subnet
+To launch and connect to an instance in your public subnet
+
+Create a key pair and use the --query option and the --output text option to pipe your private key directly into a file with the .pem extension.
+
+command- aws ec2 create-key-pair --key-name MyKeyPair --query "KeyMaterial" --output text > MyKeyPair.pem
+
+Create a security group in your VPC using the create-security-group command.
+
+command- aws ec2 create-security-group --group-name SSHAccess --description "Security group for SSH access" --vpc-id vpc-2f09a348
+
+Add a rule that allows SSH access from anywhere using the authorize-security-group-ingress command.
+
+
+command- aws ec2 authorize-security-group-ingress --group-id sg-e1fb8c9a --protocol tcp --port 22 --cidr 0.0.0.0/0
+Launch an instance into your public subnet, using the security group and key pair you've created. In the output, take note of the instance ID for your instance.
+
+command- aws ec2 run-instances --image-id ami-a4827dc9 --count 1 --instance-type t2.micro --key-name MyKeyPair --security-group-ids sg-e1fb8c9a --subnet-id subnet-b46032ec
+
+Your instance must be in the running state in order to connect to it. Use the following command to describe the state and IP address of your instance.
+
+command- aws ec2 describe-instances --instance-id i-0146854b7443af453 --query "Reservations[*].Instances[*].{State:State.Name,Address:PublicIpAddress}"
+
+When your instance is in the running state, you can connect to it using an SSH client on a Linux or Mac OS X computer by using the following command:
+
+command- ssh -i "MyKeyPair.pem" ec2-user@52.87.168.235
+
+Step 4: Clean up
+1) Delete your security group:
+
+aws ec2 delete-security-group --group-id sg-e1fb8c9a
+2) Delete your subnets:
+
+aws ec2 delete-subnet --subnet-id subnet-b46032ec
+aws ec2 delete-subnet --subnet-id subnet-a46032fc
+3) Delete your custom route table:
+
+aws ec2 delete-route-table --route-table-id rtb-c1c8faa6
+4) Detach your internet gateway from your VPC:
+
+aws ec2 detach-internet-gateway --internet-gateway-id igw-1ff7a07b --vpc-id vpc-2f09a348
+5) Delete your internet gateway:
+
+aws ec2 delete-internet-gateway --internet-gateway-id igw-1ff7a07b
+6) Delete your VPC:
+
+aws ec2 delete-vpc --vpc-id vpc-2f09a348
+        
+created vpc-vpc-01aed56610554423f
+subnetid - "subnet-"081427fa968e4c945"
+2nd subnetid- "subnet-0eff895ef72b5fe21"
+internategateway id - igw-0154e3d311fa88dc8---- to make subnet public
+route table id- rtb-02cbe6f3884caa4a0
+security group id -"sg-02998ad0fb58c32fc"
+instance id- "i-02d69b8a72c1e8713"
+
+

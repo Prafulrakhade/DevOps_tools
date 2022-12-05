@@ -1,0 +1,27 @@
+GitHub Token :-  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
+
+
+https://docs.ansible.com/ansible/latest/user_guide/intro_adhoc.html
+
+Prafulrakhade/new_chatapp_project
+
+affdf07415b363800b16390f84b628ecf286f84d
+
+    overwrite:true
+file_exists_behavior: OVERWRITE
+
+
+https://www.youtube.com/watch?v=ewEgH0FfSXM
+
+
+https://github.com/Pavangit-hub/Devops-Training/blob/master/Kubernets/Kubernetes.txt
+
+
+terraform
+    # instance_tenancy     = "default"
+    # enable_dns_support   = "true"
+    # enable_dns_hostnames = "true"
+    # enable_classiclink   = "false"
+
+
+https://phoenixnap.com/kb/how-to-install-elk-stack-on-ubuntu

@@ -1,0 +1,145 @@
+1) create a instance in ubuntu and install dockr in it
+				||DOCKER||
+
+Docker Installation:
+•	$ sudo apt-get update -y
+•	$ sudo apt-get upgrade -y
+•	$  curl -fsSL https://get.docker.com -o get-docker.sh
+•	$  ls
+•	$  sudo sh get-docker.sh
+•	$  docker version
+•	$  sudo usermod -aG docker ubuntu    -------> sudo suremod -aG <username>
+•	$  sudo systemctl start docker
+•	$  sudo systemctl status docker
+•	$  sudo systemctl enable docker
+•	$  sudo systemctl status docker
+•	$  docker –version
+-------------------------------------------------------------------------
+
+Creating Docker File & Docker Image
+•	cd database/
+•	touch Dockerfile
+•	sudo vi Dockerfile
+FROM mysql:latest
+ENV MYSQL_DATABASE chatdb
+ENV MYSQL_ROOT_PASSWORD Rakhade02
+ENV MYSQL_USER praful02
+ENV MYSQL_PASSWORD Rakhade02
+EXPOSE 3306
+•	sudo docker build -t database:database .
+
+------------------------------------------------------------------------------------------------------
+
+•	cd backend/
+•	git clone https://github.com/Prafulrakhade/new_chatapp_project   (NOTE: go to the setting.py and change 'HOST' with your database image name)
+•	sudo vi Dockerfile  
+FROM python:3.6
+RUN apt-get update
+RUN apt-get install --yes python3-pip
+RUN mkdir /new_chatapp
+COPY /new_chatapp_project /new_chatapp
+WORKDIR /new_chatapp
+RUN pip3 install -r requirements.txt
+RUN pip3 install mysqlclient
+EXPOSE 8000
+WORKDIR /new_chatapp/fundoo/
+ENTRYPOINT  python manage.py migrate && python3 manage.py runserver 0.0.0.0:8000
+
+•	sudo docker build -t backend:backend .
+
+----------------------------------------------------------------------------------------------------------------------
+
+•	cd frontend/
+•	Sudo vi Dockerfile
+FROM ubuntu
+RUN apt-get update
+RUN apt-get install -y nginx
+COPY nginx.conf /etc/nginx/sites-available/fundoo
+RUN ln -s /etc/nginx/sites-available/fundoo /etc/nginx/sites-enabled
+RUN rm -rf /etc/nginx/sites-enabled/default
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
+
+•	sudo vi nginx.conf
+server {
+listen 80;
+server_name _default;
+#location = /favicon.ico { access_log off; log_not_found off; }
+location /static/ {
+root /new_chatapp/fundoo;
+}
+location / {
+include proxy_params;
+proxy_pass http://backend:8000;     (NOTE: give a name your backend image Name)
+}
+}
+
+
+•	sudo docker build -t frontend:frontend_server .
+
+---------------------------------------------------------------------------------------------------------------------------
+
+Creating Docker Container:
+•	Sudo docker run -it --name database -d e202dd6ddb11
+•	sudo docker run -it --name backend --link database -d backend imageId  
+•	sudo docker run -it --name frontend -p 80:80 --link backend -d frontend imageId
+•	sudo docker ps
+•	to get inside container
+•	sudo docker exec -it containerName/contaierID /bin/bash
+
+ --------------------------------------------------------------------------------------------------------------------------
+
+ Push Docker images to Dockr Hub
+
+•     docker ps
+•     docker commit <containerID> <userName/newImageName:Tag>    Ex. docker commit 8579d7eab33b praful02/chat_app_frontend:frontend_server
+•     docker images
+•     docker login  ----> add login id and Password of dockerHub account
+•     docker push <RepositoryName:Tag>  ---->  Ex. docker push praful02/chat_app_frontend:frontend_server
+•     check in your Docker Hub Account Images push or not
+
+---------------------------------------------------------------------------------------------------------------------------
+
+ other commands:
+•	to delete image
+•	sudo docker rmi -f imageID/imageName
+•	to delete container
+•	sudo docker rm -f containerID/contaierName
+•	to check the IP Port of container
+•	sudo docker exec -it  containerID/containerName  cat /etc/hosts
+
+---------------------------------------------------------------------------------------------------------------------------
+
+docker compose file
+
+ Install Docker compose
+• curl -L https://github.com/docker/compose/releases/download/v2.12.2/docker-compose-linux-x86_64 -o /usr/local/bin/docker-compose
+• chmod +x /usr/local/bin/docker-compose
+• vi docker-compose.yml
+version: "3.8"
+services:
+   frontend:
+      build: ./frontend
+      ports:
+        - "80:80"
+      depends_on:
+        - backend
+   backend:
+      build: ./backend
+      ports:
+        - "8000:8000"
+      depends_on:
+        - db
+   db:
+      build: ./database
+      ports:
+        - "3306:3306"
+
+  esc
+  :wq
+
+• docker-compose up -d  -----> run docker compose file in background
+• docker ps 
+• docker-compose down  ----->  stop all the docker-compose services
+• docker-compose up -d --scale <imagename>=<number>  -----> scale a perticular service  Ex. docker-compose up -d --scale frontend=2
+• docker-compose --version
