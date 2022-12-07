@@ -61,6 +61,7 @@ Installation Command of Ansible on ubuntu 18.04
  start writing playbook for frontend
 24. nano frontplaybook.yml
 
+ 
 ---
 - name: frontend play
   hosts: frontend
@@ -69,31 +70,32 @@ Installation Command of Ansible on ubuntu 18.04
   gather_facts: yes
   tasks:
     - name: install packages for the fundoo chat app
-      action: apt name=nginx configuration file for fundoo
+      action: apt name=nginx state=present
+    - name: copy nginx configuration file for fundoo
       copy:
        src: /root/fundooapp.cfg
        dest: /etc/nginx/sites-available/fundooapp.cfg
     - name: restart service of nginx
       service:
-      name: nginx
-      state: started
+       name: nginx
+       state: started
     - name: for enabling the nginx
       file:
-        scr: /etc/nginx/sites-available/fundooapp.cfg
+        src: /etc/nginx/sites-available/fundooapp.cfg
         dest: /etc/nginx/sites-enabled/default
         state: link
     - name: restart nginx
-      service: 
+      service:
         name: nginx
-        state: restarted 
-
+        state: restarted
+        
 --------------------------------------------------------------------------------------------------
 
 25. nano fundooapp config fle  (nano fundooapp.cfg)
 
 server {
   listen 80;
-  server_name <paste private ip of frontend >
+  server_name <paste private ip of frontend > or frontend public ip
   location = /favicon.ico {access_log off; log_not_found off; }
   location /static/ { 
       root /root/new_chatapp/fundoo;
