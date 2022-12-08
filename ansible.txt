@@ -118,94 +118,78 @@ start writing playbook for backend
 27. nano bakendPlaybook.yml
 
 
---- 
-- 
-  become: true
+---
+- name: configure appserver
   hosts: backend
-  tasks: 
-    - 
-      apt: "name=python3-dev state=present"
-      name: "installing the package for chatapp"
-    - 
-      apt: 
-        name: python3-pip
-        state: present
-      name: "installing pip"
-    - 
-      become: true
-      command: "pip3 install virtualenv"
-      name: "installing the virtual env"
-    - 
-      failed_when: 
-        - repo_clone.failed
-        - "not 'Local modifications exist in repository' in repo_clone.msg"
-      git: 
-        clone: true
-        dest: new_chatapp
-        repo: "https://github.com/biradarajay1904/new_chatapp"
-      name: "clone the github repo"
+  remote_user: root
+  become: yes
+  gather_facts: yes
+  tasks:
+    - name: install python
+      apt: name=python3 state=present
+      apt: name=python3-pip state=present
+      apt: name=python3-pip state=present
+    - name: Install virtualenv python package
+      pip:
+        name: virtualenv
+    - name: Clone a github repository
+      git:
+        repo: https://github.com/Prafulrakhade/new_chatapp_project.git
+        dest: new_chatapp_project
+        clone: yes
       register: repo_clone
-    - 
-      command: 
-        cmd: "virtualenv -p /usr/bin/python3 venv"
-        creates: /root/new_chatapp1/venv
-      name: "creating the virtual environment venv"
-    - 
-      name: "Installing the python requriments"
-      pip: 
-        requirements: /root/new_chatapp/requirements.txt
+      failed_when:
+        - repo_clone.failed
+        - not 'Local modifications exist in repository' in repo_clone.msg
+    - name: creating the virtual environment venv
+      command:
+        cmd: virtualenv -p /usr/bin/python3 venv
+        creates: /root/new_chatapp_project/venv
+    - name: install python requirements in virtualenv
+      pip:
+        requirements: /root/new_chatapp_project/requirements.txt
+        virtualenv: /root/new_chatapp_project/venv
         state: present
-        virtualenv: /root/new_chatapp/venv
-    - 
-      apt: "name=default-libmysqlclient-dev state=present"
-      name: "Installing package for database mysql"
-    - 
-      apt: "name=libssl-dev state=present"
-      name: "Install the package of database"
-    - 
-      name: "Installing mysqlclient"
-      pip: 
+    - name: installing the package for database mysql
+      action: apt name=default-libmysqlclient-dev state=present
+    - name: install the package oof database
+      action: apt name=libssl-dev state=present
+    - name: install mysqlclient
+      pip:
         name: mysqlclient
-        virtualenv: /root/new_chatapp/venv
-    - 
-      name: "Installing psycopg2-binary"
-      pip: 
+        virtualenv: /root/new_chatapp_project/venv
+    - name: installing psycopg2-binary
+      pip:
         name: psycopg2-binary
-        virtualenv: /root/new_chatapp/venv
-    - 
-      file: 
-        mode: "777"
-        path: /root/new_chatapp/fundoo/manage.py
-      name: "changing file ownership"
-    - 
-      django_manage: 
-        app_path: /root/new_chatapp/fundoo
+        virtualenv: /root/new_chatapp_project/venv
+    - name: changing file ownership
+      file:
+        path: /root/new_chatapp_project/fundoo/manage.py
+        mode: '777'
+    - name: run cachetable on the application
+      django_manage:
         command: createcachetable
-        pythonpath: /root/new_chatapp/fundoo/fundoo
-        virtualenv: /root/new_chatapp/venv
-      name: "run cachetable on the application"
-    - 
-      django_manage: 
-        app_path: /root/new_chatapp/fundoo
+        app_path: /root/new_chatapp_project/fundoo
+        pythonpath: /root/new_chatapp_project/fundoo/fundoo
+        virtualenv: /root/new_chatapp_project/venv
+    - name: Running the migrate-command
+      django_manage:
         command: migrate
-        pythonpath: /root/new_chatapp/fundoo/fundoo
-        virtualenv: /root/new_chatapp/venv
-      name: "Running the migrate-command"
-    - 
-      copy: 
-        dest: /etc/systemd/system/gunicorn.service
+        app_path: /root/new_chatapp_project/fundoo
+        pythonpath: /root/new_chatapp_project/fundoo/fundoo
+        virtualenv: /root/new_chatapp_project/venv
+    - name: Copying gunicorn configurations to chatapp
+      copy:
         src: /root/gunicorn.service
-      name: "copying the gunicorn configuration"
-    - 
-      name: "restart gunicorn service"
-      systemd: 
-        daemon_reload: true
-        enabled: true
+        dest: /etc/systemd/system/gunicorn.service
+    - name: restart gunicorn srvice
+      systemd:
         name: gunicorn
+        daemon_reload: yes
         state: started
-    - 
-      name: "restarting the gunicorn service"
-      systemd: 
+        enabled: yes
+    - name: restart gunicorn service
+      systemd:
         name: gunicorn
         state: restarted
 
@@ -219,8 +203,8 @@ start writing playbook for backend
   [Service]
   User=root
   Group=www-data
-  WorkingDirectory=/root/new_chatapp/fundoo
-  ExecStart=/bin/bash -c 'source /root/new_chatapp/venv/bin/activate && gunicorn --bind 0.0.0.0:8000 fundoo.wsgi:application'
+  WorkingDirectory=/root/new_chatapp_project/fundoo
+  ExecStart=/bin/bash -c 'source /root/new_chatapp_project/venv/bin/activate && gunicorn --bind 0.0.0.0:8000 fundoo.wsgi:application'
  [Install]
  WantedBy=multi-user.target
 
@@ -231,6 +215,15 @@ start writing playbook for backend
 
 ----------------------end of the ansible 
 ------------------------------------------------------------------------------------------------------------
+Ansible Commands :-
+
+1. ansible -m ping all -----> check the connection between nodes
+2. ansible all --list-hosts -----> showing all the nodes
+3. ansible --version -----> check version
+4. ansible backend[0] --list-hosts -----> checking the nodes in perticular group 
+5. ansible backend[0:5] --list-hosts -----> checking the perticular nodes from 1 to 6
+6. ansible-playbook frontplaybook.yml -----> run playbook
+
 
 
 ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDJdoBf1lcYs2ssPVKSJkvgk/yg3euFwMMJz0/RqqDRKXPZJJYebuKpGQ0P69xQsioD0sDLgy5oHOdZ8nTBZK3+2CSnE5oEyf3BLc9f8wz8vC3QBUNBoq4Z/WSYQXSYQYIdvOJUkmQ2+7bbGVAOxZtZ7kuIcSYtuzyJugIn3it+NGjIMfGse/m7ZcSl03H/5cvY1R/csSUEEMVikoE9mZRgLOemr8FWmGlBuHYD4SJePc+6C1VNMjMdS7TkTmngALm5yXLusDBj5A0ivJHEkrhP3tvyORozFWFO32TaLinNPsbmdQMyjOCK6STPdZTdSjWyITFgOGDLLp1hfdoqsPYz root@ip-10-0-11-190
