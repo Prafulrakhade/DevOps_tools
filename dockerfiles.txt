@@ -143,3 +143,31 @@ services:
 • docker-compose down  ----->  stop all the docker-compose services
 • docker-compose up -d --scale <imagename>=<number>  -----> scale a perticular service  Ex. docker-compose up -d --scale frontend=2
 • docker-compose --version
+
+
+----------------------------------------------------------------------------------------------------------------------------------------------------
+
+When you pull the image from the .hub.docker then the docker-compose.yml for the same chat application will be given in below
+
+• vi docker-compose.yml
+version: "3.8"
+services:
+   frontend:
+      image: <imagename:tag>
+      ports:
+        - "80:80"
+      depends_on:
+        - backend
+   backend:
+      image: <imagename:tag>
+      ports:
+        - "8000:8000"
+      depends_on:
+        - db
+   db:
+      image: <imagename:tag>
+      ports:
+        - "3306:3306"
+
+  esc
+  :wq
